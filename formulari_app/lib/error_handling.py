@@ -1,8 +1,6 @@
-
-
 class ErrorHandlerBase(Exception):
     def __init__(self, msg:str):
-        self.message = msg;
+        self.message = msg
         super().__init__(self.message)
 
 class PermissionDenied(ErrorHandlerBase):
@@ -21,8 +19,6 @@ class APIError(ErrorHandlerBase):
     def __init__(self, msg:str):
         super().__init__(f"Error de API: {msg}")
 
-class dataAppendError(ErrorHandlerBase):
+class DataAppendError(ErrorHandlerBase):
     def __init__(self, msg:str):
         super().__init__(f"Error al añadir datos: {msg}")
-
-
