@@ -42,7 +42,7 @@ def formulari():
                                 rx.input(
                                     placeholder="Nom i cognoms",
                                     type="text",
-                                    pattern="^[a-zA-Z]",
+                                    pattern="[A-Za-z\s]+",
                                     required=True,
                                     radius="small"
                                 ),
