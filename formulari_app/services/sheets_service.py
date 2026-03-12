@@ -29,8 +29,9 @@ class SheetsService:
         creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
         return sheets_client(creds, self.spreadsheet_name, self.sheet_name)
 
-    def mock_formdata(self, data):
-        return self.sheets_client[2]+1,data[0], data[1], data[2]
+    def mock_formdata(self, last_row, data):
+
+        return (last_row-1), data[0], data[1], data[2]
 
     def append_row(self, data: list[FORMDATA]) -> tuple[bool, str]:
         if not data:
@@ -39,7 +40,7 @@ class SheetsService:
         sheet = self.get_sheets_client()
         last_row = sheet.row_count
 
-        self.data_mock = self.mock_formdata(data)
+        self.data_mock = self.mock_formdata(last_row, data)
         sheet.append_row(self.data_mock, table_range=f"A{last_row+1}")
 
         return (True, "Datos añadidos correctamente")
