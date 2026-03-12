@@ -13,7 +13,6 @@ class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
 
-
     async def handle_submit(self, form_data: dict):
         """Handle the form submit."""
         self.loading = True
@@ -26,7 +25,7 @@ class FormState(rx.State):
 
         except Exception as e:
             self.loading = False
-            message = e.message if hasattr(e, 'message') else str(e)
+            message = hasattr(e, 'message') or str(e)
             yield rx.toast.error(f"❌ Error enviant la reserva: {message}", duration=5000, position="top-center")
 
 
@@ -43,6 +42,7 @@ def formulari():
                                 rx.input(
                                     placeholder="Nom i cognoms",
                                     type="text",
+                                    pattern="^[a-zA-Z]",
                                     required=True,
                                     radius="small"
                                 ),
@@ -54,9 +54,9 @@ def formulari():
                                 color="red"
                             ),
                             rx.form.message(
-                                "El nom és obligatori",
-                                match="typeMismatch",
-                                color="red"
+                                "El nom no és vàlid",
+                                match="patternMismatch",
+                                color="orange",
                             ),
                             direction="column",
                             spacing="1",
