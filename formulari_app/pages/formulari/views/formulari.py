@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import reflex as rx
 from formulari_app.pages.formulari.components.wrapper import wrapper
 from formulari_app.services.sheets_service import SheetsService
+from formulari_app.services.google_clients.sheets_client import sheets_client
+from formulari_app.services.google_clients.google_client import GoogleClient
+from formulari_app.lib.google_credentials import credentials, SCOPES
 
 load_dotenv()
 GOOGLE_SPREADSHEET_ID=os.getenv("GOOGLE_ACTES_SPREADSHEET_ID") or ""
@@ -13,6 +16,10 @@ class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
 
+    def get_sheets_client(self):
+        creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
+        return sheets_client(creds, GOOGLE_SPREADSHEET_ID, GOOGLE_SHEET)
+
     async def handle_submit(self, form_data: dict):
         """Handle the form submit."""
         self.loading = True
@@ -20,7 +27,7 @@ class FormState(rx.State):
 
         try:
             self.loading = False
-            SheetsService(GOOGLE_SPREADSHEET_ID, GOOGLE_SHEET).append_row(list(form_data.values()))
+            SheetsService.append_row(list(form_data.values()), self.get_sheets_client())
             yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
 
         except Exception as e:
@@ -42,7 +49,7 @@ def formulari():
                                 rx.input(
                                     placeholder="Nom i cognoms",
                                     type="text",
-                                    pattern="[A-Za-z\s]+",
+                                    pattern="[A-Za-z]+",
                                     required=True,
                                     radius="small"
                                 ),
