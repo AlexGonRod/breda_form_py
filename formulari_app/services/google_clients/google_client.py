@@ -1,13 +1,14 @@
-import gspread
 from formulari_app.lib.config import get_credentials
 
 class GoogleClient:
-    def __init__(self):
-        self.credentials = get_credentials()
+    def __init__(self, creds):
 
-        # authorize the clientsheet
-        try:
-            self.client = gspread.Client(auth=self.credentials)
+        if not creds:
+            raise ValueError("Authentication client is required to initialize GoogleClient.")
 
-        except Exception as e:
-            raise Exception(f'Error initializing GoogleClient: {str(e)}')
+        self.creds = creds
+    # authorize the clientsheet
+    @classmethod
+    def create_with_credentials(cls, credentials_args, scopes):
+        creds = get_credentials(credentials_args, scopes)
+        return creds
