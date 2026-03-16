@@ -4,19 +4,15 @@ from formulari_app.models.models import FORMDATA
 
 load_dotenv()
 
-def mock_formdata(last_row, data):
-    return (last_row - 1), data[0], data[1], data[2]
-
 class SheetsService:
-    def __init__(self) -> None:
-        pass
-
     @classmethod
-    def append_row(self, data: list[FORMDATA], sheet) -> tuple[bool, str]:
+    def append_row(cls, data: list[FORMDATA], sheet) -> tuple[bool, str]:
         if not data:
             raise DataAppendError("No hay datos para añadir")
-        last_row = sheet.row_count
-        data_mock = mock_formdata(last_row, data)
-        sheet.append_row(data_mock, table_range=f"A{last_row+1}")
+
+        row_formula = "=ROW()-1"
+        full_row = [row_formula] + data
+
+        sheet.append_row(full_row,value_input_option="USER_ENTERED", insert_data_option="INSERT_ROWS")
 
         return (True, "Datos añadidos correctamente")

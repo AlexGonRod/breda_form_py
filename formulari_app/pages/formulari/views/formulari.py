@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import asyncio
 import reflex as rx
 from formulari_app.pages.formulari.components.wrapper import wrapper
 from formulari_app.services.sheets_service import SheetsService
@@ -11,29 +12,33 @@ load_dotenv()
 GOOGLE_SPREADSHEET_ID=os.getenv("GOOGLE_ACTES_SPREADSHEET_ID") or ""
 GOOGLE_SHEET = "Paellas 2026"
 
+def get_sheets_client():
+    creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
+    return sheets_client(creds, GOOGLE_SPREADSHEET_ID, GOOGLE_SHEET)
 
 class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
 
-    def get_sheets_client(self):
-        creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
-        return sheets_client(creds, GOOGLE_SPREADSHEET_ID, GOOGLE_SHEET)
-
-    async def handle_submit(self, form_data: dict):
+    async def handle_submit(self, data: dict):
         """Handle the form submit."""
+        self.form_data = data
         self.loading = True
         yield
 
         try:
-            self.loading = False
-            SheetsService.append_row(list(form_data.values()), self.get_sheets_client())
+            loop = asyncio.get_event_loop()
+            client = get_sheets_client()
+            loop.run_in_executor(None, SheetsService.append_row, list(self.form_data.values()), client)
             yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
 
         except Exception as e:
-            self.loading = False
             message = hasattr(e, 'message') or str(e)
             yield rx.toast.error(f"❌ Error enviant la reserva: {message}", duration=5000, position="top-center")
+
+        finally:
+            self.loading = False
+            yield
 
 
 def formulari():
@@ -131,7 +136,7 @@ def formulari():
                         name="nombre",
                         width="100%",
                     ),
-                    rx.button("Submit",rx.spinner(loading=FormState.loading), disable=FormState.loading, type="submit", width="100%",
+                    rx.button("Submit",rx.spinner(loading=FormState.loading), is_disabled=FormState.loading, type="submit", width="100%",
                                     radius="small"),
 
                 ),
