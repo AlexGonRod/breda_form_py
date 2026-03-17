@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import asyncio
+from datetime import date
 import reflex as rx
 from formulari_app.pages.formulari.components.wrapper import wrapper
 from formulari_app.services.sheets_service import SheetsService
@@ -8,17 +9,26 @@ from formulari_app.services.google_clients.sheets_client import sheets_client
 from formulari_app.services.google_clients.google_client import GoogleClient
 from formulari_app.lib.google_credentials import credentials, SCOPES
 
+
 load_dotenv()
 GOOGLE_SPREADSHEET_ID=os.getenv("GOOGLE_ACTES_SPREADSHEET_ID") or ""
-GOOGLE_SHEET = "Paellas 2026"
+GOOGLE_SHEET = "Paelles 2026"
 
-def get_sheets_client():
+def get_sheets_client(sheet_name):
     creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
-    return sheets_client(creds, GOOGLE_SPREADSHEET_ID, GOOGLE_SHEET)
+    current_date = date.today()
+    current_year = current_date.year
+    sheet_name = f"{sheet_name.capitalize()} {current_year}"
+    return sheets_client(creds, GOOGLE_SPREADSHEET_ID, sheet_name)
 
 class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
+
+    @rx.var
+    def sheet_name(self) -> str:
+        return self.router.url.split("/")[-1] or "paelles"
+
 
     async def handle_submit(self, data: dict):
         """Handle the form submit."""
@@ -28,7 +38,7 @@ class FormState(rx.State):
 
         try:
             loop = asyncio.get_event_loop()
-            client = get_sheets_client()
+            client = get_sheets_client(sheet_name=self.sheet_name)
             loop.run_in_executor(None, SheetsService.append_row, list(self.form_data.values()), client)
             yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
 
