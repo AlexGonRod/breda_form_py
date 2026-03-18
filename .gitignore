@@ -1,3 +1,4 @@
+.web
 .states
 *.db
 __pycache__/
