@@ -3,6 +3,5 @@
 __pycache__/
 *.py[cod]
 assets/external/
-.web
 .env
 .DS_Store
