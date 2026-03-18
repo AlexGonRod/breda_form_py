@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
+[project.scripts]
+app = "formulary_app/formulary_app:app"
 dependencies = [
     "gspread>=6.2.1",
     "python-dotenv>=1.2.2",
