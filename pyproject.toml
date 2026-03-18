@@ -9,6 +9,8 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "reflex>=0.8.27",
 ]
+[project.scripts]
+app = "formulari_app/formulari_app:app"
 
 [dependency-groups]
 tests = [
