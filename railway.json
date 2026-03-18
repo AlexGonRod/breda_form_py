@@ -1,0 +1,7 @@
+{
+  "deploy": {
+    "startCommand": "reflex run --env prod --backend-only",
+    "healthcheckPath": "/ping",
+    "port": 8000
+  }
+}   
