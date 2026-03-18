@@ -47,7 +47,7 @@ jobs:
       - name: GitHub Branch Deployer
         uses: nicholasgriffintn/github-branch-deployment-action@1.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
           BRANCH: production
           FOLDER: frontend
           MESSAGE: 'Build: ({sha}) {msg}'   
