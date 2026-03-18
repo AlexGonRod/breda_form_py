@@ -9,6 +9,9 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "reflex>=0.8.27",
 ]
+[tool.setuptools.packages.find]
+include = ["formulari_app*"]
+exclude = ["assets*"]
 
 [dependency-groups]
 tests = [
