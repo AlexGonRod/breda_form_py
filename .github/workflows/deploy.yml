@@ -23,6 +23,7 @@ jobs:
         run: |
           reflex export --no-zip --frontend-only
         env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   
           API_URL: "http://breda.vercel.app:8000"
       - name: Upload frontend build 📦
         uses: actions/upload-artifact@v4
