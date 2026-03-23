@@ -1,7 +1,7 @@
 import os
-from dotenv import load_dotenv
 import asyncio
 from datetime import date
+from dotenv import load_dotenv
 import reflex as rx
 from formulari_app.pages.formulari.components.wrapper import wrapper
 from formulari_app.services.sheets_service import SheetsService
@@ -24,6 +24,24 @@ def get_sheets_client(sheet_name):
 class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
+    total_personas: int = 0
+    max_persons: int = 40
+
+    @rx.var
+    def spots_left(self) -> int:
+        return max(0, self.max_persons - self.total_personas)
+
+    @rx.var
+    def is_full(self) -> bool:
+        return self.total_personas >= self.max_persons
+
+    async def get_current_occupancy(self):
+        loop = asyncio.get_running_loop()
+        client = get_sheets_client(sheet_name=self.sheet_name)
+        # Usamos el método que ya tienes en SheetsService
+        res = await loop.run_in_executor(None, SheetsService.get_total_personas, client.open(self.sheet_name).sheet1)
+        self.total_personas = int(res) if res else 0
+
 
     @rx.var
     def sheet_name(self) -> str:
@@ -39,11 +57,11 @@ class FormState(rx.State):
         try:
             loop = asyncio.get_event_loop()
             client = get_sheets_client(sheet_name=self.sheet_name)
-            loop.run_in_executor(None, SheetsService.append_row, list(self.form_data.values()), client)
+            await loop.run_in_executor(None, SheetsService.append_row, list(self.form_data.values()), client, self.sheet_name)
             yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
 
         except Exception as e:
-            message = hasattr(e, 'message') or str(e)
+            message = str(e)
             yield rx.toast.error(f"❌ Error enviant la reserva: {message}", duration=5000, position="top-center")
 
         finally:

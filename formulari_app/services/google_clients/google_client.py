@@ -1,4 +1,4 @@
-from formulari_app.lib.config import get_credentials
+from formulari_app.lib.get_credentials import get_credentials
 
 class GoogleClient:
     def __init__(self, creds):

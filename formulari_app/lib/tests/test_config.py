@@ -1,6 +1,6 @@
 import pytest
 from google.oauth2.service_account import Credentials
-from formulari_app.lib.config import get_credentials
+from formulari_app.lib.get_credentials import get_credentials
 from formulari_app.lib.google_credentials import credentials, SCOPES
 from formulari_app.lib.error_handling import PermissionDenied
 
