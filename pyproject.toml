@@ -1,7 +1,7 @@
 [project]
 name = "breda-formulari-reflex"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "Formulari in python for local parties"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -14,4 +14,7 @@ dependencies = [
 tests = [
     "pytest>=9.0.2",
 ]
+
+[tool.setuptools]
+packages = ["formulari_app"]
 
