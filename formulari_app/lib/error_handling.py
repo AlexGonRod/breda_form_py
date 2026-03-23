@@ -5,20 +5,20 @@ class ErrorHandlerBase(Exception):
 
 class PermissionDenied(ErrorHandlerBase):
     def __init__(self, msg:str):
-        super().__init__(f"Permiso denegado: {msg}")
+        super().__init__(f"Permis denegat: {msg}")
 
 class WorksheetNotFound(ErrorHandlerBase):
     def __init__(self, work_sheet:str):
-        super().__init__(f"Worksheet no encontrada: '{work_sheet}'" if work_sheet else "Worksheet no especificada")
+        super().__init__(f"Worksheet no trobada: '{work_sheet}'" if work_sheet else "Worksheet no especificada")
 
 class SpreadsheetNotFound(ErrorHandlerBase):
     def __init__(self, spreadsheet_id:str):
-        super().__init__(f"Spreadsheet no encontrada: '{spreadsheet_id}'" if spreadsheet_id else "Spreadsheet no especificada")
+        super().__init__(f"Spreadsheet no trobada: '{spreadsheet_id}'" if spreadsheet_id else "Spreadsheet no especificada")
 
 class APIError(ErrorHandlerBase):
     def __init__(self, msg:str):
-        super().__init__(f"Error de API: {msg}")
+        super().__init__(f"Error de l'API: {msg}")
 
 class DataAppendError(ErrorHandlerBase):
     def __init__(self, msg:str):
-        super().__init__(f"Error al añadir datos: {msg}")
+        super().__init__(f"Error al afegir dades: {msg}")
