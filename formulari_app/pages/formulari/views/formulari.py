@@ -15,16 +15,15 @@ from formulari_app.lib.rate_limiter import RateLimiter
 
 load_dotenv()
 
-# Validate environment variables on startup
-GOOGLE_SPREADSHEET_ID = os.getenv("GOOGLE_ACTES_SPREADSHEET_ID")
-if not GOOGLE_SPREADSHEET_ID:
-    error_msg = "GOOGLE_ACTES_SPREADSHEET_ID env var not set"
-    logger.error(error_msg)
-    raise ValueError(f"⚠️ {error_msg}")
-
 logger.info("Formulari page configured with Spreadsheet ID: %s...", GOOGLE_SPREADSHEET_ID[:20])
 
-def get_sheets_client(sheet_name):
+def get_sheets_client(sheet_name: str) -> object:
+    GOOGLE_SPREADSHEET_ID = os.getenv("GOOGLE_ACTES_SPREADSHEET_ID")
+    if not GOOGLE_SPREADSHEET_ID:
+        error_msg = "GOOGLE_ACTES_SPREADSHEET_ID env var not set"
+        logger.error(error_msg)
+        raise ValueError(f"⚠️ {error_msg}")
+
     creds = GoogleClient.create_with_credentials(credentials_args = credentials, scopes = SCOPES)
     current_date = date.today()
     current_year = current_date.year
