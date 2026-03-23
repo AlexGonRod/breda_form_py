@@ -1,4 +1,3 @@
-from pydantic import ValidationError, BaseModel
 from formulari_app.models.models import FORMDATA
 from formulari_app.lib.logger import logger
 
@@ -32,10 +31,6 @@ class FormDataValidator:
         except ValueError as e:
             logger.error("Validation error: %s", e)
             raise
-        except ValidationError as e:
-            error_msg = f"Invalid form data: {e}"
-            logger.error("%s", error_msg)
-            raise ValueError(error_msg) from e
         except Exception as e:
             error_msg = f"Unexpected validation error: {e}"
             logger.error("%s", error_msg, exc_info=True)
