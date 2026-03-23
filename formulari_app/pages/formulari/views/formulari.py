@@ -10,12 +10,9 @@ from formulari_app.services.google_clients.google_client import GoogleClient
 from formulari_app.lib.google_credentials import credentials, SCOPES
 from formulari_app.lib.logger import logger
 from formulari_app.lib.validators import FormDataValidator
-from formulari_app.lib.rate_limiter import RateLimiter
 
 
 load_dotenv()
-
-logger.info("Formulari page configured with Spreadsheet ID: %s...", GOOGLE_SPREADSHEET_ID[:20])
 
 def get_sheets_client(sheet_name: str) -> object:
     GOOGLE_SPREADSHEET_ID = os.getenv("GOOGLE_ACTES_SPREADSHEET_ID")
@@ -46,7 +43,6 @@ class FormState(rx.State):
         return self.total_persones >= self.max_persons
 
     async def load_occupancy(self):
-        """Load current occupancy and max persons for the event"""
         try:
             logger.info("Loading occupancy for: %s", self.sheet_name)
 
@@ -69,18 +65,9 @@ class FormState(rx.State):
         return self.router.url.split("/")[-1]
 
 
-    async def handle_submit(self, data: dict)
+    async def handle_submit(self, data: dict):
         self.form_data = data
         self.loading = True
-
-        # Rate limiting: use session_id as unique identifier
-        allowed, rate_limit_msg = RateLimiter.is_allowed(self.session_id)
-        if not allowed:
-            logger.warning("Rate limit hit for session %s", self.session_id)
-            yield rx.toast.error(f"⚠️ {rate_limit_msg}", duration=5000, position="top-center")
-            self.loading = False
-            yield
-            return
 
         logger.info("Form submission initiated for %s", self.sheet_name)
         yield
