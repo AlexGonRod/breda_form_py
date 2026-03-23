@@ -36,7 +36,7 @@ class RateLimiter:
         return True, "OK"
 
     @classmethod
-    def reset(cls, client_ip: str = None):
+    def reset(cls, client_ip: str = "")-> None:
         if client_ip:
             cls._request_history.pop(client_ip, None)
             logger.info("Rate limit reset for IP %s", client_ip)

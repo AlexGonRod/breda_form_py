@@ -20,7 +20,7 @@ class TestRateLimiter:
 
         # First 3 requests should be OK
         for i in range(3):
-            allowed, msg = RateLimiter.is_allowed(ip)
+            allowed = RateLimiter.is_allowed(ip)
             assert allowed is True, f"Request {i+1} should be allowed"
 
     def test_request_exceeds_limit(self):
