@@ -1,8 +1,3 @@
-"""
-Logging configuration for the application.
-Provides structured logging to console and file.
-"""
-
 import logging
 import os
 from logging.handlers import RotatingFileHandler
