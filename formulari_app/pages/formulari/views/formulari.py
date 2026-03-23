@@ -35,7 +35,7 @@ class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
     total_persones: int = 0
-    max_persons: int = 40
+    max_persons: int = 999
 
     @rx.var
     def spots_left(self) -> int:
@@ -46,9 +46,14 @@ class FormState(rx.State):
         return self.total_persones >= self.max_persons
 
     async def load_occupancy(self):
-        """Load current occupancy when page loads"""
+        """Load current occupancy and max persons for the event"""
         try:
             logger.info("Loading occupancy for: %s", self.sheet_name)
+
+            # Set max persons based on event type
+            self.max_persons = SheetsService.get_max_personas(self.sheet_name)
+            logger.debug("Max persons set to: %d for event: %s", self.max_persons, self.sheet_name)
+
             loop = asyncio.get_running_loop()
             client = get_sheets_client(sheet_name=self.sheet_name)
             res = await loop.run_in_executor(None, SheetsService.get_total_personas, client)
@@ -61,7 +66,7 @@ class FormState(rx.State):
 
     @rx.var
     def sheet_name(self) -> str:
-        return self.router.url.split("/")[-1] or "paelles"
+        return self.router.url.split("/")[-1]
 
 
     async def handle_submit(self, data: dict):
@@ -125,8 +130,12 @@ def formulari():
                     width="100%",
                 ),
                 rx.vstack(
-                    rx.text(f"📊 Lugares disponibles: {FormState.spots_left}/{FormState.max_persons}",
-                           font_size="16px", font_weight="bold", color="green"),
+                    rx.cond(
+                        FormState.sheet_name == "paelles",
+                        rx.text(f"📊 Lugares disponibles: {FormState.spots_left}/{FormState.max_persons}",
+                               font_size="16px", font_weight="bold", color="green"),
+                        None,
+                    ),
                     spacing="2",
                     width="100%",
                 ),
