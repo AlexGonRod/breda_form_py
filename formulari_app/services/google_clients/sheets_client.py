@@ -3,32 +3,33 @@ from formulari_app.lib.error_handling import WorksheetNotFound, SpreadsheetNotFo
 from formulari_app.lib.logger import logger
 
 
-def sheets_client(creds, spreadhseet_name: str, sheet_name: str):
-    ws, sheet= None, None
+def sheets_client(creds, spreadsheet_name: str, sheet_name: str):
+    spreadsheet = None
+    worksheet = None
 
     try:
-        logger.debug("Connecting to spreadsheet: %s, sheet: %s", spreadhseet_name, sheet_name)
-        client = gspread.Client(auth=creds)
+        logger.debug("Connecting to spreadsheet: %s, sheet: %s", spreadsheet_name, sheet_name)
+        client = gspread.authorize(creds)
         # get the instance of the Spreadsheet
-        ws = client.open_by_key(spreadhseet_name)
-        sheet = ws.worksheet(sheet_name)
+        spreadsheet = client.open_by_key(spreadsheet_name)
+        worksheet = spreadsheet.worksheet(sheet_name)
 
-        if not ws:
-            raise WorksheetNotFound(f"{spreadhseet_name}")
-        if not sheet:
-            raise SpreadsheetNotFound(f"{sheet_name}")
+        if not spreadsheet:
+            raise SpreadsheetNotFound(f"{spreadsheet_name}")
+        if not worksheet:
+            raise WorksheetNotFound(f"{sheet_name}")
 
         logger.info("✅ Connected to sheet: %s", sheet_name)
-        return sheet
+        return worksheet
 
     except gspread.exceptions.WorksheetNotFound as e:
         logger.error("Worksheet not found: %s", sheet_name)
-        raise WorksheetNotFound(f"{ws}") from e
+        raise WorksheetNotFound(f"Worksheet not found: {sheet_name}") from e
 
     except gspread.exceptions.APIError as e:
         logger.error("Google Sheets API error %d: %s", e.response.status_code, e)
         if e.response.status_code == 404:
-            raise SpreadsheetNotFound(f"{sheet}") from e
+            raise SpreadsheetNotFound(f"{spreadsheet_name}") from e
         if e.response.status_code == 429:
             logger.warning("Google Sheets API quota exceeded")
             raise DataAppendError("Límit de quota excedida") from e
@@ -36,7 +37,7 @@ def sheets_client(creds, spreadhseet_name: str, sheet_name: str):
             logger.warning("Permission denied to Google Sheets")
             raise PermissionDenied("Acces denegat a la fulla de càlcul") from e
         else:
-            raise APIError(f"Códi d'error {e.response.status_code}") from e
+            raise APIError(f"Codi d'error {e.response.status_code}") from e
 
     except gspread.exceptions.GSpreadException as e:
         logger.error("Google Sheets error: %s", e)

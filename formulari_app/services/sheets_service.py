@@ -15,8 +15,10 @@ class SheetsService:
 
     @classmethod
     def get_max_personas(cls, sheet_name: str) -> int:
+        sheet_name_lower = sheet_name.lower()
         for event_key, max_val in cls.EVENT_MAX_PERSONS.items():
-            if event_key.lower() in sheet_name.lower():
+            # Check if sheet name starts with the event key (case insensitive)
+            if sheet_name_lower.startswith(event_key.lower()):
                 logger.debug("Max persons for %s: %d", sheet_name, max_val)
                 return max_val
         # Default to no limit

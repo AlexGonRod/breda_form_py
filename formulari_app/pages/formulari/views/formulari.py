@@ -1,6 +1,6 @@
 import os
 import asyncio
-from datetime import date
+from datetime import date, datetime, timedelta
 from dotenv import load_dotenv
 import reflex as rx
 from formulari_app.pages.formulari.components.wrapper import wrapper
@@ -10,6 +10,7 @@ from formulari_app.services.google_clients.google_client import GoogleClient
 from formulari_app.lib.google_credentials import credentials, SCOPES
 from formulari_app.lib.logger import logger
 from formulari_app.lib.validators import FormDataValidator
+from collections import defaultdict
 
 
 load_dotenv()
@@ -33,6 +34,11 @@ class FormState(rx.State):
     loading: bool = False
     total_persones: int = 0
     max_persons: int = 999
+
+    # Rate limiting tracking
+    _last_submission: dict = {}
+    _rate_limit_window: int = 60  # 60 seconds
+    _rate_limit_max_requests: int = 3  # Max 3 requests per window
 
     @rx.var
     def spots_left(self) -> int:
@@ -64,8 +70,37 @@ class FormState(rx.State):
     def sheet_name(self) -> str:
         return self.router.url.split("/")[-1]
 
+    def _is_rate_limited(self, identifier: str) -> bool:
+        """Check if the identifier has exceeded rate limit"""
+        now = datetime.now()
+        window_start = now - timedelta(seconds=self._rate_limit_window)
+
+        # Clean old entries
+        if identifier in self._last_submission:
+            self._last_submission[identifier] = [
+                timestamp for timestamp in self._last_submission[identifier]
+                if timestamp > window_start
+            ]
+        else:
+            self._last_submission[identifier] = []
+
+        # Check if limit exceeded
+        if len(self._last_submission[identifier]) >= self._rate_limit_max_requests:
+            return True
+
+        # Add current request
+        self._last_submission[identifier].append(now)
+        return False
+
 
     async def handle_submit(self, data: dict):
+        # Rate limiting check
+        client_id = self.router.session.client_id if hasattr(self.router.session, 'client_id') else "unknown"
+        if self._is_rate_limited(client_id):
+            logger.warning("Rate limit exceeded for client: %s", client_id)
+            yield rx.toast.error("⚠️ Has enviat demasiades sol·licituds. Si us plau, esperi alguns segons abans de tornar a intentar-ho.", duration=5000, position="top-center")
+            return
+
         self.form_data = data
         self.loading = True
 

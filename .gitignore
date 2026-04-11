@@ -6,6 +6,7 @@ assets/external/
 .env
 .web
 logs/
+.claude/
 
 # DS_Store
 .DS_Store
