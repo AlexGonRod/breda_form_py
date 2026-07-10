@@ -148,10 +148,8 @@ class FormState(rx.State):
             )
 
             logger.info("✅ Form submitted successfully for %s", self.sheet_name)
-            yield [
-                rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center"),
-                rx.call_script("setTimeout(() => window.location.reload(), 1500)"),
-            ]
+            yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
+            yield rx.call_script("setTimeout(() => window.location.reload(), 1500)")
 
         except ValueError as e:
             # Validation error - user-friendly message
