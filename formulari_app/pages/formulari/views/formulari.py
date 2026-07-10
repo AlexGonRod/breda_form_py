@@ -148,7 +148,7 @@ class FormState(rx.State):
 
 def formulari():
     return rx.container(
-        wrapper(),
+        wrapper(FormState.sheet_name),
         # Occupancy Status Section
         rx.cond(
             FormState.sheet_name == "tast",
@@ -163,7 +163,7 @@ def formulari():
                         width="100%",
                     ),
                     rx.vstack(
-                        rx.text(f"📊 Lugares disponibles: {FormState.spots_left}/{FormState.max_persons}",
+                        rx.text(f"📊 Places disponibles: {FormState.spots_left}/{FormState.max_persons}",
                             font_size="16px", font_weight="bold", color="green"),
                         spacing="2",
                         width="100%",
