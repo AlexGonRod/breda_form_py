@@ -35,7 +35,7 @@ class FormState(rx.State):
     loading_occupancy: bool = False
     initialized: bool = False
     total_persones: int = 0
-    max_persons: int = 999
+    max_persons: int = 40
 
     # Rate limiting tracking
     _last_submission: dict = {}
