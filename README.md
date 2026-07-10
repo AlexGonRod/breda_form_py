@@ -91,22 +91,12 @@ pytest formulari_app/lib/tests/ -v
 
 ## Deployment
 
-### Using Railway.app (Recommended)
-
-1. Connect your GitHub repository
-2. Add environment variables in Railway dashboard
-3. Railway will automatically detect and deploy the Reflex app
-
-See [railway.json](railway.json) for platform configuration.
-
-### Manual Deployment
+### Manual Deployment on reflex cloud
 
 1. Build the production bundle:
    ```bash
-   reflex export
+   reflex deploy
    ```
-
-2. Deploy using your hosting service (Railway, Vercel, etc.)
 
 3. Set all environment variables in your hosting platform
 
