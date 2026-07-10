@@ -10,6 +10,7 @@ from formulari_app.services.google_clients.google_client import GoogleClient
 from formulari_app.lib.google_credentials import credentials, SCOPES
 from formulari_app.lib.logger import logger
 from formulari_app.lib.validators import FormDataValidator
+from formulari_app.lib.constants import MAX_PERSONS, persones_pattern
 from collections import defaultdict
 
 
@@ -35,7 +36,7 @@ class FormState(rx.State):
     loading_occupancy: bool = False
     initialized: bool = False
     total_persones: int = 0
-    max_persons: int = 40
+    max_persons: int = MAX_PERSONS["tast"]
 
     # Rate limiting tracking
     _last_submission: dict = {}
@@ -121,11 +122,23 @@ class FormState(rx.State):
             validated_data = FormDataValidator.validate_and_convert(data)
             logger.info("Form data validated: %s", validated_data.model_dump())
 
-            # 2. Get sheets client
+            # 2. Check occupancy limit for tast event
+            if self.sheet_name == "tast":
+                persones_requested = int(validated_data.persones)
+                if persones_requested > self.spots_left:
+                    logger.warning("Too many persons requested for tast: %d > %d spots left", persones_requested, self.spots_left)
+                    yield rx.toast.error(
+                        f"⚠️ No hi ha prou places! Només queden {self.spots_left} places disponibles i n'has demanat {persones_requested}.",
+                        duration=5000,
+                        position="top-center"
+                    )
+                    return
+
+            # 3. Get sheets client
             loop = asyncio.get_event_loop()
             client = get_sheets_client(sheet_name=self.sheet_name)
 
-            # 3. Append to spreadsheet
+            # 4. Append to spreadsheet
             await loop.run_in_executor(
                 None,
                 SheetsService.append_row,
@@ -135,7 +148,10 @@ class FormState(rx.State):
             )
 
             logger.info("✅ Form submitted successfully for %s", self.sheet_name)
-            yield rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center")
+            yield [
+                rx.toast.success("✅ Reserva enviada correctament", duration=3000, position="top-center"),
+                rx.call_script("setTimeout(() => window.location.reload(), 1500)"),
+            ]
 
         except ValueError as e:
             # Validation error - user-friendly message
@@ -260,21 +276,21 @@ def formulari():
                                     rx.form.label("Participants"),
                                     rx.form.control(
                                         rx.input(
-                                            placeholder="Nombre de persones (1-40)",
+                                            placeholder=f"Nombre de persones (1-{MAX_PERSONS['tast']})",
                                             type="string",
-                                            pattern="^[1-9][0-9]?$|^40$",
+                                            pattern=persones_pattern(MAX_PERSONS["tast"]),
                                             required=True,
                                             radius="small",
                                         ),
                                         as_child=True,
                                     ),
                                     rx.form.message(
-                                        "Nombre obligatori entre 1 i 40",
+                                        f"Nombre obligatori entre 1 i {MAX_PERSONS['tast']}",
                                         match="valueMissing",
                                         color="red"
                                     ),
                                     rx.form.message(
-                                        "Nombre de participants entre 1 i 40",
+                                        f"Nombre de participants entre 1 i {MAX_PERSONS['tast']}",
                                         match="patternMismatch",
                                         color="orange"
                                     ),

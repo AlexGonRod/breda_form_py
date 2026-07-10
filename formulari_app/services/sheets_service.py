@@ -1,27 +1,19 @@
 import os
 from dotenv import load_dotenv
+from formulari_app.lib.constants import MAX_PERSONS
 from formulari_app.lib.error_handling import DataAppendError
-from formulari_app.models.models import FORMDATA
 from formulari_app.lib.logger import logger
 
 load_dotenv()
 
 class SheetsService:
-    # Event-specific maximum persons
-    EVENT_MAX_PERSONS = {
-        "Tast": 40,
-        "Paelles": 999,  # No real limit
-    }
-
     @classmethod
     def get_max_personas(cls, sheet_name: str) -> int:
         sheet_name_lower = sheet_name.lower()
-        for event_key, max_val in cls.EVENT_MAX_PERSONS.items():
-            # Check if sheet name starts with the event key (case insensitive)
+        for event_key, max_val in MAX_PERSONS.items():
             if sheet_name_lower.startswith(event_key.lower()):
                 logger.debug("Max persons for %s: %d", sheet_name, max_val)
                 return max_val
-        # Default to no limit
         logger.debug("No max limit configured for %s, using default 999", sheet_name)
         return 999
 
@@ -36,7 +28,7 @@ class SheetsService:
             raise
 
     @classmethod
-    def append_row(cls, data: list[FORMDATA], sheet, sheet_name: str) -> tuple[bool, str]:
+    def append_row(cls, data: list, sheet, sheet_name: str) -> tuple[bool, str]:
         if not data:
             logger.warning("Attempted to append empty data to %s", sheet_name)
             raise DataAppendError("No hay datos para añadir")
@@ -50,9 +42,16 @@ class SheetsService:
         if event_max < 999:  # Only if it has a real limit (not the default 999)
             try:
                 total_persones = int(cls.get_total_personas(sheet))
-                if total_persones >= event_max:
-                    logger.warning("Event full for %s. Current: %d, Max: %d", name, total_persones, event_max)
-                    raise DataAppendError(f"El número total de persones excedeix el límit de {event_max}. Total actual: {total_persones}")
+                persones_to_add = int(data[2])
+                if total_persones + persones_to_add > event_max:
+                    spots_left = event_max - total_persones
+                    logger.warning(
+                        "Event full for %s. Current: %d, Requested: %d, Max: %d, Spots left: %d",
+                        name, total_persones, persones_to_add, event_max, spots_left
+                    )
+                    raise DataAppendError(
+                        f"No hi ha prou places. Només queden {spots_left} places i n'has demanat {persones_to_add}."
+                    )
             except DataAppendError:
                 raise
             except Exception as e:

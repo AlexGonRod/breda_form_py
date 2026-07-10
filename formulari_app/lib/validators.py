@@ -1,22 +1,23 @@
+from formulari_app.lib.constants import MAX_PERSONS
 from formulari_app.models.models import FORMDATA
 from formulari_app.lib.logger import logger
 
 
 class FormDataValidator:
     @staticmethod
-    def validate_and_convert(form_data: dict) -> FORMDATA:
+    def validate_and_convert(form_data: dict, max_persons: int = MAX_PERSONS["tast"]) -> FORMDATA:
         try:
             logger.debug("Validating form data: %s", form_data)
 
             # Extract individual fields
-            nom = form_data.get("nom", "").strip()
-            telefon = form_data.get("telefon", "").strip()
-            persones = form_data.get("persones", "").strip()
+            nom = str(form_data.get("nom", "")).strip()
+            telefon = str(form_data.get("telefon", "")).strip()
+            persones = str(form_data.get("persones", "")).strip()
 
             # Validate each field
             FormDataValidator._validate_nom(nom)
             FormDataValidator._validate_telefon(telefon)
-            persones_int = FormDataValidator._validate_persones(persones)
+            persones_int = FormDataValidator._validate_persones(persones, max_persons)
 
             # Create validated model
             validated_data = FORMDATA(
@@ -68,7 +69,7 @@ class FormDataValidator:
             raise ValueError("El telèfon no és vàlid per a España")
 
     @staticmethod
-    def _validate_persones(persones: str) -> int:
+    def _validate_persones(persones: str, max_persons: int = MAX_PERSONS["tast"]) -> int:
         if not persones:
             raise ValueError("El nombre de participants és obligatori")
 
@@ -80,7 +81,7 @@ class FormDataValidator:
         if persones_int < 1:
             raise ValueError("Ha de haver almenys 1 participant")
 
-        if persones_int > 40:
-            raise ValueError("Número màxim de participants: 40")
+        if persones_int > max_persons:
+            raise ValueError(f"Número màxim de participants: {max_persons}")
 
         return persones_int
