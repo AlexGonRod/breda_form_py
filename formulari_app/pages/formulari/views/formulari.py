@@ -32,6 +32,8 @@ def get_sheets_client(sheet_name: str) -> object:
 class FormState(rx.State):
     form_data: dict = {}
     loading: bool = False
+    loading_occupancy: bool = False
+    initialized: bool = False
     total_persones: int = 0
     max_persons: int = 999
 
@@ -49,6 +51,7 @@ class FormState(rx.State):
         return self.total_persones >= self.max_persons
 
     async def load_occupancy(self):
+        self.loading_occupancy = True
         try:
             logger.info("Loading occupancy for: %s", self.sheet_name)
 
@@ -60,10 +63,15 @@ class FormState(rx.State):
             client = get_sheets_client(sheet_name=self.sheet_name)
             res = await loop.run_in_executor(None, SheetsService.get_total_personas, client)
             self.total_persones = int(res) if res else 0
+            self.initialized = True
             logger.info("✅ Occupancy loaded: %d/%d participants", self.total_persones, self.max_persons)
         except Exception as e:
             logger.error("Error loading occupancy: %s", e, exc_info=True)
             self.total_persones = 0
+            self.initialized = True
+        finally:
+            self.loading_occupancy = False
+            yield
 
 
     @rx.var
@@ -148,156 +156,162 @@ class FormState(rx.State):
 
 def formulari():
     return rx.container(
-        wrapper(FormState.sheet_name),
-        # Occupancy Status Section
         rx.cond(
-            FormState.sheet_name == "tast",
-            rx.box(
+            FormState.initialized,
+            rx.fragment(
+                wrapper(FormState.sheet_name),
+                # Occupancy Status Section
                 rx.cond(
-                    FormState.is_full,
-                    rx.vstack(
-                        rx.text("⛔ No s'accepten més sol.licituts!", font_size="18px", font_weight="bold", color="red"),
-                        rx.text(f"Actualment tenim {FormState.total_persones} persones registrades (màxim: {FormState.max_persons})",
-                            font_size="14px", color="red"),
-                        spacing="2",
-                        width="100%",
-                    ),
-                    rx.vstack(
-                        rx.text(f"📊 Places disponibles: {FormState.spots_left}/{FormState.max_persons}",
-                            font_size="16px", font_weight="bold", color="green"),
-                        spacing="2",
-                        width="100%",
-                    ),
-                ),
-                border="1px solid",
-                border_radius="10px",
-                padding="15px",
-                margin_bottom="20px",
-                background_color=rx.cond(FormState.is_full, "#ffe6e6", "#e6ffe6"),
-            ),
-            None,
-        ),
-        # Form (hide only if tast is full)
-        rx.cond(
-            rx.cond(FormState.sheet_name == "tast", FormState.is_full, False),
-            None,
-            rx.form(
-                rx.vstack(
-                    rx.form.field(
-                        rx.form.label('Formulari de participació', font_size="24px", font_weight="bold", margin_bottom="16px"),
-                        rx.flex(
-                            rx.form.label("Nom"),
-                            rx.form.control(
-                                rx.input(
-                                    placeholder="Nom i cognoms",
-                                    type="text",
-                                    pattern="[A-Za-záéíóú']+",
-                                    required=True,
-                                    radius="small"
-                                ),
-                                as_child=True,
-                            ),
-                            rx.form.message(
-                                "El nom és obligatori",
-                                match="valueMissing",
-                                color="red"
-                            ),
-                            rx.form.message(
-                                "El nom no és vàlid",
-                                match="patternMismatch",
-                                color="orange",
-                            ),
-                            direction="column",
-                            spacing="1",
-                            width="100%"
-                        ),
-                        name="nom",
-                        width="100%",
-                    ),
-                    rx.form.field(
-                        rx.flex(
-                            rx.form.label("Telèfon"),
-                            rx.form.control(
-                                rx.input(
-                                    placeholder="Telèfon (9 dígits)",
-                                    type="string",
-                                    pattern="[0-9]{9}",
-                                    required=True,
-                                    radius="small",
-                                ),
-                                as_child=True,
-                            ),
-                            rx.form.message(
-                                "El telèfon és obligatori",
-                                match="valueMissing",
-                                color="red",
-                            ),
-                            rx.form.message(
-                                "El telèfon ha de tenir exactament 9 dígits",
-                                match="patternMismatch",
-                                color="orange",
-                            ),
-                            direction="column",
-                            spacing="1",
-                            width="100%"
-                        ),
-                        name="telefon",
-                        width="100%",
-                    ),
-                    rx.form.field(
-                        rx.flex(
-                            rx.form.label("Participants"),
-                            rx.form.control(
-                                rx.input(
-                                    placeholder="Nombre de persones (1-40)",
-                                    type="string",
-                                    pattern="^[1-9][0-9]?$|^40$",
-                                    required=True,
-                                    radius="small",
-                                ),
-                                as_child=True,
-                            ),
-                            rx.form.message(
-                                "Nombre obligatori entre 1 i 40",
-                                match="valueMissing",
-                                color="red"
-                            ),
-                            rx.form.message(
-                                "Nombre de participants entre 1 i 40",
-                                match="patternMismatch",
-                                color="orange"
-                            ),
-                            direction="column",
-                            spacing="1",
-                            width="100%"
-                        ),
-                        name="persones",
-                        width="100%",
-                    ),
-                    rx.button(
+                    FormState.sheet_name == "tast",
+                    rx.box(
                         rx.cond(
-                            FormState.loading,
-                            rx.hstack(rx.spinner(), rx.text("Enviant...")),
-                            rx.text("Enviar participació")
+                            FormState.is_full,
+                            rx.vstack(
+                                rx.text("⛔ No s'accepten més sol.licituts!", font_size="18px", font_weight="bold", color="red"),
+                                rx.text(f"Actualment tenim {FormState.total_persones} persones registrades (màxim: {FormState.max_persons})",
+                                    font_size="14px", color="red"),
+                                spacing="2",
+                                width="100%",
+                            ),
+                            rx.vstack(
+                                rx.text(f"📊 Places disponibles: {FormState.spots_left}/{FormState.max_persons}",
+                                    font_size="16px", font_weight="bold", color="green"),
+                                spacing="2",
+                                width="100%",
+                            ),
                         ),
-                        is_disabled=FormState.loading,
-                        type="submit",
-                        width="100%",
-                        radius="small",
-                        cursor=rx.cond(FormState.loading,
-                            "not-allowed",
-                            "pointer"
+                        border="1px solid",
+                        border_radius="10px",
+                        padding="15px",
+                        margin_bottom="20px",
+                        background_color=rx.cond(FormState.is_full, "#ffe6e6", "#e6ffe6"),
+                    ),
+                    None,
+                ),
+                # Form (hide only if tast is full)
+                rx.cond(
+                    rx.cond(FormState.sheet_name == "tast", FormState.is_full, False),
+                    None,
+                    rx.form(
+                        rx.vstack(
+                            rx.form.field(
+                                rx.form.label('Formulari de participació', font_size="24px", font_weight="bold", margin_bottom="16px"),
+                                rx.flex(
+                                    rx.form.label("Nom"),
+                                    rx.form.control(
+                                        rx.input(
+                                            placeholder="Nom i cognoms",
+                                            type="text",
+                                            pattern="[A-Za-záéíóú']+",
+                                            required=True,
+                                            radius="small"
+                                        ),
+                                        as_child=True,
+                                    ),
+                                    rx.form.message(
+                                        "El nom és obligatori",
+                                        match="valueMissing",
+                                        color="red"
+                                    ),
+                                    rx.form.message(
+                                        "El nom no és vàlid",
+                                        match="patternMismatch",
+                                        color="orange",
+                                    ),
+                                    direction="column",
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                name="nom",
+                                width="100%",
+                            ),
+                            rx.form.field(
+                                rx.flex(
+                                    rx.form.label("Telèfon"),
+                                    rx.form.control(
+                                        rx.input(
+                                            placeholder="Telèfon (9 dígits)",
+                                            type="string",
+                                            pattern="[0-9]{9}",
+                                            required=True,
+                                            radius="small",
+                                        ),
+                                        as_child=True,
+                                    ),
+                                    rx.form.message(
+                                        "El telèfon és obligatori",
+                                        match="valueMissing",
+                                        color="red",
+                                    ),
+                                    rx.form.message(
+                                        "El telèfon ha de tenir exactament 9 dígits",
+                                        match="patternMismatch",
+                                        color="orange",
+                                    ),
+                                    direction="column",
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                name="telefon",
+                                width="100%",
+                            ),
+                            rx.form.field(
+                                rx.flex(
+                                    rx.form.label("Participants"),
+                                    rx.form.control(
+                                        rx.input(
+                                            placeholder="Nombre de persones (1-40)",
+                                            type="string",
+                                            pattern="^[1-9][0-9]?$|^40$",
+                                            required=True,
+                                            radius="small",
+                                        ),
+                                        as_child=True,
+                                    ),
+                                    rx.form.message(
+                                        "Nombre obligatori entre 1 i 40",
+                                        match="valueMissing",
+                                        color="red"
+                                    ),
+                                    rx.form.message(
+                                        "Nombre de participants entre 1 i 40",
+                                        match="patternMismatch",
+                                        color="orange"
+                                    ),
+                                    direction="column",
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                name="persones",
+                                width="100%",
+                            ),
+                            rx.button(
+                                rx.cond(
+                                    FormState.loading,
+                                    rx.hstack(rx.spinner(), rx.text("Enviant...")),
+                                    rx.text("Enviar participació")
+                                ),
+                                is_disabled=FormState.loading,
+                                type="submit",
+                                width="100%",
+                                radius="small",
+                                cursor=rx.cond(FormState.loading,
+                                    "not-allowed",
+                                    "pointer"
+                                ),
+                            ),
                         ),
+                        on_submit=FormState.handle_submit,
+                        reset_on_submit=True,
+                        border="1px solid",
+                        border_radius="10px",
+                        padding="20px",
+                        spacing="15px",
                     ),
                 ),
-                on_submit=FormState.handle_submit,
-                reset_on_submit=True,
-                border="1px solid",
-                border_radius="10px",
-                padding="20px",
-                spacing="15px",
+                rx.divider(),
             ),
+            rx.center(rx.spinner(), padding="20px"),
         ),
-        rx.divider(),
         on_mount=FormState.load_occupancy,
     )
